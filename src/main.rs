@@ -28,35 +28,28 @@ fn main() {
 
     let mut client = db::client();
 
-    // TODO query needs to be adjusted after verifying everything works
-    let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} LIMIT 100000");
+    println!("querying...");
 
+    // load the entire table into memory, sorted.
+    let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} ORDER BY tokenized");
     let rows = client.query(&query, &[]).expect("query database");
+    let count = rows.len() as f64;
 
+    println!("received {} rows", count);
+
+    // write it back to some file
     let mut f = File::create(&outfile).expect("create outfile");
 
-    for row in &rows {
+    println!("start writing");
+
+    for (i, row ) in rows.iter().enumerate() {
         let row = TableRow::from_row(row);
         row.write_bin(&mut f).expect("write row");
+
+        if i & 0x3ff == 0 {
+            let percentage = i as f64 / count;
+            println!("{:0.2}%", percentage * 100.0);
+        }
     }
-
-    drop(f);
-
-    let f = File::open(outfile).unwrap();
-
-    let content: Vec<u8> = f.bytes().map(Result::unwrap).collect(); //.expect("read outfile");
-    let mut content: &[u8] = &content;
-
-    let mut i = 0;
-    while !content.is_empty() {
-        let (row, rest) = TableRow::from_bin(content).expect("read row");
-        content = rest;
-
-
-        assert_eq!(row, TableRow::from_row(&rows[i]));
-
-        i += 1;
-    }
-    
     println!("nice.");
 }

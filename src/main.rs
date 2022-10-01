@@ -37,6 +37,7 @@ fn main() {
 
     for row in rows {
         let row = TableRow::from_row(row);
+        dbg!(&row);
         row.write_bin(&mut f).expect("write row");
     }
 

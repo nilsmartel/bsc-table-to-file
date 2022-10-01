@@ -1,9 +1,9 @@
 use anyhow::Result;
 use postgres::{types::FromSql, Client, NoTls};
 mod db;
-use std::io::prelude::*;
-use std::fs::File;
 use fast_smaz::Smaz;
+use std::fs::File;
+use std::io::prelude::*;
 use varint_compression::*;
 
 fn print_help() -> ! {
@@ -42,11 +42,13 @@ fn main() {
 
     drop(f);
 
-    let content = std::fs::read_to_string(outfile).expect("read outfile");
-    let mut content = content.as_bytes();
+    let f = File::open(outfile).unwrap();
+
+    let content: Vec<u8> = f.bytes().map(Result::unwrap).collect(); //.expect("read outfile");
+    let mut content: &[u8] = &content;
 
     while !content.is_empty() {
-        let ( row, rest ) = TableRow::from_bin(content).expect("read row");
+        let (row, rest) = TableRow::from_bin(content).expect("read row");
         content = rest;
 
         dbg!(row);
@@ -68,13 +70,18 @@ impl TableRow {
         let rowid = row.get("rowid");
         let colid = row.get("colid");
 
-        TableRow { tokenized, tableid, rowid, colid }
+        TableRow {
+            tokenized,
+            tableid,
+            rowid,
+            colid,
+        }
     }
 
-    fn write_bin(&self, w: &mut impl Write ) -> Result<()> {
+    fn write_bin(&self, w: &mut impl Write) -> Result<()> {
         let tokenized = self.tokenized.smaz_compress();
         let len = compress(tokenized.len() as u64);
-        let nums = compress_list(&[self.tableid as u64, self.rowid as u64, self. colid as u64]);
+        let nums = compress_list(&[self.tableid as u64, self.rowid as u64, self.colid as u64]);
 
         let total_length = compress((len.len() + tokenized.len() + nums.len()) as u64);
 
@@ -82,7 +89,7 @@ impl TableRow {
         w.write_all(&len)?;
         w.write_all(&tokenized)?;
         w.write_all(&nums)?;
-        
+
         Ok(())
     }
 
@@ -91,7 +98,6 @@ impl TableRow {
         let total_length = total_length as usize;
 
         if rest.len() < total_length {
-
             return Err(anyhow::Error::msg("need more data"));
         }
 

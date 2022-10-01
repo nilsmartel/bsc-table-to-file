@@ -29,13 +29,13 @@ fn main() {
     let mut client = db::client();
 
     // TODO query needs to be adjusted after verifying everything works
-    let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} LIMIT 10");
+    let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} LIMIT 100000");
 
     let rows = client.query(&query, &[]).expect("query database");
 
     let mut f = File::create(&outfile).expect("create outfile");
 
-    for row in rows {
+    for row in &rows {
         let row = TableRow::from_row(row);
         row.write_bin(&mut f).expect("write row");
     }
@@ -47,9 +47,15 @@ fn main() {
     let content: Vec<u8> = f.bytes().map(Result::unwrap).collect(); //.expect("read outfile");
     let mut content: &[u8] = &content;
 
+    let mut i = 0;
     while !content.is_empty() {
-        let (_row, rest) = TableRow::from_bin(content).expect("read row");
+        let (row, rest) = TableRow::from_bin(content).expect("read row");
         content = rest;
+
+
+        assert_eq!(row, TableRow::from_row(&rows[i]));
+
+        i += 1;
     }
     
     println!("nice.");

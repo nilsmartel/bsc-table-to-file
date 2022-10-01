@@ -4,7 +4,7 @@ use postgres::Row;
 use std::io::prelude::*;
 use varint_compression::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TableRow {
     pub tokenized: String,
     pub tableid: u32,
@@ -34,12 +34,12 @@ fn get_number(row: &Row, idx: &str) -> i64 {
 }
 
 impl TableRow {
-    pub fn from_row(row: Row) -> Self {
+    pub fn from_row(row: &Row) -> Self {
         // Note: tokenized is nullable. Coerce to emptystring
         let tokenized = row.try_get("tokenized").unwrap_or_default();
-        let tableid = get_number(&row, "tableid") as u32;
-        let colid = get_number(&row, "colid") as u32;
-        let rowid = get_number(&row, "rowid") as u64;
+        let tableid = get_number(row, "tableid") as u32;
+        let colid = get_number(row, "colid") as u32;
+        let rowid = get_number(row, "rowid") as u64;
 
         TableRow {
             tokenized,

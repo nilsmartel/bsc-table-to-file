@@ -57,8 +57,8 @@ fn main() {
 struct TableRow {
     tokenized: String,
     tableid: i32,
-    rowid: i32,
-    colid: i64,
+    rowid: i64,
+    colid: i32,
 }
 
 impl TableRow {
@@ -110,8 +110,8 @@ impl TableRow {
         let ([tableid, rowid, colid], _rest) = decompress_n(&rest[n..]);
 
         let tableid = tableid as i32;
-        let rowid = rowid as i32;
-        let colid = colid as i64;
+        let rowid = rowid as i64;
+        let colid = colid as i32;
 
         Self {
             tokenized,

@@ -34,7 +34,7 @@ fn get_number(row: &Row, idx: &str) -> i64 {
 }
 
 impl TableRow {
-    fn from_row(row: Row) -> Self {
+    pub fn from_row(row: Row) -> Self {
         let tokenized = row.get("tokenized");
         let tableid = get_number(&row, "tableid") as u32;
         let colid = get_number(&row, "colid") as u32;
@@ -48,7 +48,7 @@ impl TableRow {
         }
     }
 
-    fn write_bin(&self, w: &mut impl Write) -> Result<()> {
+    pub fn write_bin(&self, w: &mut impl Write) -> Result<()> {
         let tokenized = self.tokenized.smaz_compress();
         let len = compress(tokenized.len() as u64);
         let nums = compress_list(&[self.tableid as u64, self.colid as u64, self.rowid as u64]);
@@ -63,7 +63,7 @@ impl TableRow {
         Ok(())
     }
 
-    fn from_bin(data: &[u8]) -> Result<(Self, &[u8])> {
+    pub fn from_bin(data: &[u8]) -> Result<(Self, &[u8])> {
         let (total_length, rest) = decompress(data);
         let total_length = total_length as usize;
 
@@ -76,7 +76,7 @@ impl TableRow {
         Ok((v, &rest[total_length..]))
     }
 
-    fn from_bin_raw(data: &[u8]) -> Self {
+    pub fn from_bin_raw(data: &[u8]) -> Self {
         let (n, rest) = decompress(data);
         let n = n as usize;
         let tokenized = &rest[..n];

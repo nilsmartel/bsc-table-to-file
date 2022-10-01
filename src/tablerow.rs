@@ -1,8 +1,8 @@
 use anyhow::Result;
-use std::io::prelude::*;
 use fast_smaz::Smaz;
-use varint_compression::*;
 use postgres::Row;
+use std::io::prelude::*;
+use varint_compression::*;
 
 #[derive(Debug, Clone)]
 pub struct TableRow {
@@ -51,7 +51,7 @@ impl TableRow {
     fn write_bin(&self, w: &mut impl Write) -> Result<()> {
         let tokenized = self.tokenized.smaz_compress();
         let len = compress(tokenized.len() as u64);
-        let nums = compress_list(&[self.tableid as u64, self.colid as u64, self.rowid as u64, ]);
+        let nums = compress_list(&[self.tableid as u64, self.colid as u64, self.rowid as u64]);
 
         let total_length = compress((len.len() + tokenized.len() + nums.len()) as u64);
 

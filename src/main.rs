@@ -37,7 +37,6 @@ fn main() {
 
     for row in rows {
         let row = TableRow::from_row(row);
-        dbg!(&row);
         row.write_bin(&mut f).expect("write row");
     }
 
@@ -49,9 +48,9 @@ fn main() {
     let mut content: &[u8] = &content;
 
     while !content.is_empty() {
-        let (row, rest) = TableRow::from_bin(content).expect("read row");
+        let (_row, rest) = TableRow::from_bin(content).expect("read row");
         content = rest;
-
-        dbg!(row);
     }
+    
+    println!("nice.");
 }

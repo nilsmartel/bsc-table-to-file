@@ -1,6 +1,9 @@
 use postgres::fallible_iterator::FallibleIterator;
+use postgres::Row;
 mod db;
 use std::fs::File;
+use std::sync::mpsc::*;
+use std::thread::spawn;
 
 mod tablerow;
 use tablerow::TableRow;
@@ -22,27 +25,36 @@ fn parse_args() -> (String, String) {
     (outfile, table)
 }
 
+fn stream_rows(table: &str) -> Receiver<Row> {
+    // stream rows of tables, sorted
+    let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} ORDER BY tokenized");
+
+    let (s, r) = channel();
+
+    spawn(move || {
+        let mut client = db::client();
+        println!("querying...");
+        let params: [bool; 0] = [];
+        let mut rows = client.query_raw(&query, &params).expect("query database");
+
+        while let Some(row) = rows.next().unwrap() {
+            s.send(row).expect("send row to channel");
+        }
+    });
+
+    r
+}
+
 fn main() {
     let (outfile, table) = parse_args();
 
-    let mut client = db::client();
-
-    println!("querying...");
-
-    // load the entire table into memory, sorted.
-    let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} ORDER BY tokenized");
-    let params: [bool; 0] = [];
-    let mut rows = client.query_raw(&query, &params).expect("query database");
-
-    println!("received rows");
+    println!("writing rows to {outfile}");
 
     // write it back to some file
     let mut f = File::create(&outfile).expect("create outfile");
 
-    println!("start writing");
-
     let mut i = 0;
-    while let Some(row) = rows.next().unwrap() {
+    for row in stream_rows(&table) {
         let row = TableRow::from_row(&row);
         row.write_bin(&mut f).expect("write row");
 
@@ -52,5 +64,5 @@ fn main() {
 
         i += 1;
     }
-    println!("nice.");
+    println!("done");
 }

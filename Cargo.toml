@@ -1,4 +1,5 @@
 [package]
+# name = "bintable"
 name = "table-to-file"
 version = "0.1.0"
 edition = "2021"
@@ -10,3 +11,4 @@ postgres = "0.19.4"                         # A native, synchronous PostgreSQL c
 anyhow = "1.0.65"                                   # Flexible concrete Error type built on std::error::Error
 fast-smaz = "0.1.0"    # Pure Rust SMAZ compression implementation
 varint-compression = "0.1.0"    # variable length integer compression
+# fallible-iter = "*"

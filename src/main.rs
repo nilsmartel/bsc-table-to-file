@@ -1,7 +1,6 @@
-use anyhow::Result;
+use postgres::fallible_iterator::FallibleIterator;
 mod db;
 use std::fs::File;
-use std::io::prelude::*;
 
 mod tablerow;
 use tablerow::TableRow;
@@ -32,24 +31,26 @@ fn main() {
 
     // load the entire table into memory, sorted.
     let query = format!("SELECT tokenized, tableid, rowid, colid FROM {table} ORDER BY tokenized");
-    let rows = client.query(&query, &[]).expect("query database");
-    let count = rows.len() as f64;
+    let params: [bool; 0] = [];
+    let mut rows = client.query_raw(&query, &params).expect("query database");
 
-    println!("received {} rows", count);
+    println!("received rows");
 
     // write it back to some file
     let mut f = File::create(&outfile).expect("create outfile");
 
     println!("start writing");
 
-    for (i, row ) in rows.iter().enumerate() {
-        let row = TableRow::from_row(row);
+    let mut i = 0;
+    while let Some(row) = rows.next().unwrap() {
+        let row = TableRow::from_row(&row);
         row.write_bin(&mut f).expect("write row");
 
         if i & 0x3ff == 0 {
-            let percentage = i as f64 / count;
-            println!("{:0.2}%", percentage * 100.0);
+            println!("{:05}%", i);
         }
+
+        i += 1;
     }
     println!("nice.");
 }

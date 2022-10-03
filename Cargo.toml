@@ -1,5 +1,5 @@
 [package]
-name = "bintable"
+name = "table-to-file"
 version = "0.1.0"
 edition = "2021"
 
